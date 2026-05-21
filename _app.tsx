@@ -1,5 +1,6 @@
 import '../i18n/i18n';
 import { useEffect } from 'react';
+import { useRouter } from 'next/router';
 import type { AppProps } from 'next/app';
 import summitSettings from '../summit-settings.json';
 import { createFontImport } from '../utils/fontUtils';
@@ -25,6 +26,7 @@ import { currencyDisplayOptions, currencyOptions } from '../utils/addon-utils/cu
 import { languageDisplayOptions } from '../utils/addon-utils/language-options';
 import { Option } from '../store/slices/general_slices/multilingual-slice';
 import useCurrencyLanguageHandler from '../hooks/GeneralHooks/LanguageHandler';
+import { resetStore } from '../store/slices/auth/logout-slice';
 
 const summitSettingsData: any = summitSettings;
 // const fontFamily = summitSettingsData?.data?.font_family || 'Nunito';
@@ -42,25 +44,39 @@ const queryClient = new QueryClient({
   },
 });
 
-const localStoragePersister =
-  typeof window !== 'undefined'
-    ? createAsyncStoragePersister({ storage: window.localStorage })
-    : undefined;
+const localStoragePersister = typeof window !== 'undefined' ? createAsyncStoragePersister({ storage: window.localStorage }) : undefined;
 
 function InnerApp({ Component, pageProps }: AppProps) {
   const { ENABLE_GOOGLE_ANALYTICS, ALLOW_GUEST_TO_ACCESS_SITE_EVEN_WITHOUT_AUTHENTICATION } = CONSTANTS;
   const { handleLanguageShallowUpdate, handleCurrencyShallowUpdate } = useCurrencyLanguageHandler();
-  
+
+  const router = useRouter();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (CONSTANTS.ENABLE_REDIRECT_FROM_CRM && router.query.is_external_redirect === '1' && router.query.user_id) {
+      if (router.pathname !== '/login') {
+        dispatch(resetStore());
+        localStorage.clear();
+
+        router.push({
+          pathname: '/login',
+          query: router.query,
+        });
+      }
+    }
+  }, [router.query.is_external_redirect, router.query.user_id, router.pathname]);
+
   useEffect(() => {
     const storedCurrency = localStorage.getItem('selected_currency');
     const storedLanguage = localStorage.getItem('selected_language');
     const currency = currencyDisplayOptions.find((opt: Option) => storedCurrency && opt?.value === storedCurrency);
     const language = languageDisplayOptions.find((opt: Option) => storedLanguage && opt?.label === storedLanguage);
-    
+
     if (storedCurrency && currency) {
       handleCurrencyShallowUpdate(currency);
     }
-    
+
     if (storedLanguage && language) {
       handleLanguageShallowUpdate(language);
     }
