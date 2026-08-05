@@ -17,7 +17,8 @@ const ImageGalleryWithBottomThumbnails = ({ slideShowImages, selectedImageBasedO
   const { t } = useTranslation('common');
 
   const getImageURL = (imgPath: string) => {
-    const sanitizedPath = imgPath.startsWith('/') ? imgPath.slice(1) : imgPath;
+    if (!imgPath) return '';
+    const sanitizedPath = imgPath?.startsWith('/') ? imgPath?.slice(1) : imgPath;
     return isEMR ? `${baseImgURL}/${sanitizedPath}` : `${CONSTANTS.API_BASE_URL}/${sanitizedPath}`;
   };
 
@@ -26,7 +27,7 @@ const ImageGalleryWithBottomThumbnails = ({ slideShowImages, selectedImageBasedO
     return `${url} 600w, ${url} 1200w, ${url} 1800w`;
   };
 
-  const largeImgURL = getImageURL(selectedImageBasedOnSelectedTone >= 0 ? slideShowImages[selectedImageBasedOnSelectedTone] : enlargeImg);
+  const largeImgURL = getImageURL(selectedImageBasedOnSelectedTone >= 0 ? (slideShowImages[selectedImageBasedOnSelectedTone] ?? slideShowImages[0]) : (enlargeImg ?? slideShowImages[0]));
 
   return (
     <div>
